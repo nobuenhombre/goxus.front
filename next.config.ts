@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const nextConfig = {
+  reactCompiler: true,
+  devIndicators: {
+    position: "bottom-right",
+  },
+} as NextConfig;
 
 export default nextConfig;
