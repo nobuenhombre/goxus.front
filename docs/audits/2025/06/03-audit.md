@@ -40,25 +40,25 @@
 
 ## 3. Prioritized Recommendations
 
-1. **Добавить App Router fallback-файлы (`loading.tsx`, `error.tsx`, `not-found.tsx`)**
+1. - [ ] **Добавить App Router fallback-файлы (`loading.tsx`, `error.tsx`, `not-found.tsx`)**
    — улучшит UX при медленной сети и ошибках. `loading.tsx` особенно важен для users (fetch).
 
-2. **Убрать исключение тестов из `tsconfig.json` `include`**
+2. - [ ] **Убрать исключение тестов из `tsconfig.json` `include`**
    — типовая безопасность тестов критична для рефакторинга. Исключать из сборки можно через `outDir` или `tsconfig.test.json`.
 
-3. **Разделить `UsersPage` на Server Component + Client Component**
+3. - [ ] **Разделить `UsersPage` на Server Component + Client Component**
    — Server Component делает `fetchUsers()`, передает `initialData`. Client Component отвечает за поиск, пагинацию, delete dialog. Уменьшит JS bundle и улучшит FCP.
 
-4. **Убрать дублирование `API_BASE`**
+4. - [ ] **Убрать дублирование `API_BASE`**
    — `lib/auth.ts` должен импортировать `API_BASE` из `lib/api.ts`. Единый источник истины.
 
-5. **Добавить `"use client"` в хуки `use-mobile.ts` и `use-local-storage.ts`**
+5. - [ ] **Добавить `"use client"` в хуки `use-mobile.ts` и `use-local-storage.ts`**
    — предотвратит случайный импорт в Server Component.
 
-6. **Создать заглушки страниц `/roles` и `/settings` (или убрать ссылки)**
+6. - [ ] **Создать заглушки страниц `/roles` и `/settings` (или убрать ссылки)**
    — избежать 404 для пользователей.
 
-7. **Начать писать компонентные тесты (RTL + Vitest)**
+7. - [ ] **Начать писать компонентные тесты (RTL + Vitest)**
    — покрытие 8% на front недопустимо для production. Начать с `AppHeader`, `AppSidebar`, `LoginPage`.
 
 ---
