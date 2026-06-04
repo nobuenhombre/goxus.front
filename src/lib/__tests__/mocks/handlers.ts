@@ -17,6 +17,7 @@ export const handlers = [
           updated_at: "2026-06-03T14:52:57.079488Z",
         },
       ],
+      total_count: 1,
     })
   }),
 

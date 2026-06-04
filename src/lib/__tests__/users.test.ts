@@ -15,7 +15,15 @@ describe("fetchUsers", () => {
 
   it("returns users on success", async () => {
     setToken("valid-token")
-    const users = await fetchUsers()
+    const { users, total } = await fetchUsers()
+    expect(users).toHaveLength(1)
+    expect(users[0].name).toBe("Ivan")
+    expect(total).toBe(1)
+  })
+
+  it("passes limit/offset query params", async () => {
+    setToken("valid-token")
+    const { users } = await fetchUsers({ limit: 10, offset: 20 })
     expect(users).toHaveLength(1)
     expect(users[0].name).toBe("Ivan")
   })

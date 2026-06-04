@@ -47,6 +47,8 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearchState] = useState("")
   const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchState(value)
@@ -55,36 +57,49 @@ export default function UsersPage() {
   const [deleteDialog, setDeleteDialog] = useState<User | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // Fetch users on mount — classic async data-loading pattern with cleanup.
+  // Fetch a page from the server
+  const loadPage = useCallback(
+    (pageNum: number, searchSignal: AbortSignal) => {
+      setLoading(true)
+      setError(null)
+
+      fetchUsers({
+        limit: PAGE_SIZE,
+        offset: pageNum * PAGE_SIZE,
+        signal: searchSignal,
+      })
+        .then((result) => {
+          setUsers(result.users)
+          setTotalCount(result.total)
+          setHasMore(result.users.length >= PAGE_SIZE)
+        })
+        .catch((err) => {
+          if (err.name === "AbortError") return
+          const msg =
+            err instanceof Error ? err.message : "Failed to load users"
+          if (
+            msg.includes("Not Found") ||
+            msg.includes("user token not found") ||
+            msg.includes("Not Authenticated") ||
+            msg.includes("401")
+          ) {
+            clearToken()
+            router.replace("/login")
+            return
+          }
+          setError(msg)
+        })
+        .finally(() => setLoading(false))
+    },
+    [router],
+  )
+
+  // Fetch on mount and when page changes
   useEffect(() => {
     const controller = new AbortController()
-    setLoading(true)
-    setError(null)
-
-    fetchUsers(controller.signal)
-      .then((data) => {
-        setUsers(data)
-        setPage(0)
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") return
-        const msg = err instanceof Error ? err.message : "Failed to load users"
-        if (
-          msg.includes("Not Found") ||
-          msg.includes("user token not found") ||
-          msg.includes("Not Authenticated") ||
-          msg.includes("401")
-        ) {
-          clearToken()
-          router.replace("/login")
-          return
-        }
-        setError(msg)
-      })
-      .finally(() => setLoading(false))
-
+    loadPage(page, controller.signal)
     return () => controller.abort()
-  }, [router])
+  }, [page, loadPage])
 
   const filtered = useMemo(() => {
     if (!search.trim()) return users
@@ -95,12 +110,6 @@ export default function UsersPage() {
         u.email.toLowerCase().includes(q),
     )
   }, [users, search])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-
-  const paged = useMemo(() => {
-    return filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-  }, [filtered, page])
 
   const handleDelete = async () => {
     if (!deleteDialog) return
@@ -180,7 +189,7 @@ export default function UsersPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Users</h1>
           <p className="text-sm text-muted-foreground">
-            {users.length} user{users.length !== 1 ? "s" : ""} total
+            {totalCount} user{totalCount !== 1 ? "s" : ""} total
           </p>
         </div>
         <Button>
@@ -221,8 +230,8 @@ export default function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paged.length > 0 ? (
-              paged.map((user) => (
+            {filtered.length > 0 ? (
+              filtered.map((user) => (
                 <TableRow
                   key={user.id}
                   className="group/row"
@@ -303,7 +312,7 @@ export default function UsersPage() {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Page {page + 1} of {totalPages}
+          Page {page + 1} of {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
         </p>
         <div className="flex items-center gap-2">
           <Button
@@ -318,7 +327,7 @@ export default function UsersPage() {
           <Button
             variant="outline"
             size="sm"
-            disabled={page >= totalPages - 1}
+            disabled={page + 1 >= Math.ceil(totalCount / PAGE_SIZE)}
             onClick={() => setPage((p) => p + 1)}
           >
             Next

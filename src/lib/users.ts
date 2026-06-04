@@ -15,20 +15,31 @@ export interface User {
 export interface UsersResponse {
   version: string
   data: User[]
+  total_count: number
 }
 
 /* ------------------------------------------------------------------ */
 /* Fetch                                                              */
 /* ------------------------------------------------------------------ */
 
-export async function fetchUsers(signal?: AbortSignal): Promise<User[]> {
+export async function fetchUsers(opts?: {
+  limit?: number
+  offset?: number
+  signal?: AbortSignal
+}): Promise<{ users: User[]; total: number }> {
   const token = getToken()
   if (!token) throw new Error("Not authenticated")
 
-  const body = await apiFetchJSON<UsersResponse>("/api/v1/entity/user/", {
-    signal,
+  const params = new URLSearchParams()
+  if (opts?.limit !== undefined) params.set("limit", String(opts.limit))
+  if (opts?.offset !== undefined) params.set("offset", String(opts.offset))
+  const qs = params.toString()
+  const url = qs ? `/api/v1/entity/user/?${qs}` : "/api/v1/entity/user/"
+
+  const body = await apiFetchJSON<UsersResponse>(url, {
+    signal: opts?.signal,
   })
-  return body.data
+  return { users: body.data, total: body.total_count }
 }
 
 /* ------------------------------------------------------------------ */
