@@ -10,7 +10,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "make -C .. run-back",
+      command: "BACK_CONFIG=configs/e2e/config.yaml make -C .. run-back",
       url: "http://localhost:8080/health",
       reuseExistingServer: true,
       timeout: 120_000,

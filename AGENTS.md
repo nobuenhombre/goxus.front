@@ -64,7 +64,11 @@ src/
 - **React Compiler**: Enabled in `next.config.ts` via the `experimental.reactCompiler` option. Avoid patterns that violate Rules of Hooks (no conditional `useState`/`useEffect`).
 - **shadcn-admin reference**: [satnaing/shadcn-admin](https://github.com/satnaing/shadcn-admin) is used as a UI pattern reference but is not a dependency.
 
-## 7. References
+## 7. Skills
+
+- `base-ui-combobox-trigger-only` — Base UI Combobox v1.5: trigger-only (Select) mode, баг встроенной фильтрации и fix с `filter={null}`. См. `nodejs/base-ui-combobox-trigger-only/SKILL.md`
+
+## 8. References
 
 - [Next.js docs](https://nextjs.org/docs)
 - [Tailwind CSS v4 docs](https://tailwindcss.com/docs)

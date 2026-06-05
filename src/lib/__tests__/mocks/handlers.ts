@@ -15,6 +15,7 @@ export const handlers = [
           email_verified_at: "2026-06-03T14:52:57.079488Z",
           created_at: "2026-06-03T14:52:57.079488Z",
           updated_at: "2026-06-03T14:52:57.079488Z",
+          deleted_at: null,
         },
       ],
       total_count: 1,
@@ -46,5 +47,22 @@ export const handlers = [
   // DELETE /api/v1/entity/user/:id — success
   http.delete(`${API}/api/v1/entity/user/:id`, () => {
     return new HttpResponse(null, { status: 200 })
+  }),
+
+  // POST /api/v1/entity/user/:id/restore — success
+  http.post(`${API}/api/v1/entity/user/:id/restore`, () => {
+    return HttpResponse.json({
+      version: "v1",
+      data: {
+        id: 1,
+        name: "Ivan",
+        email: "nobuenhombre@yandex.ru",
+        email_verified_at: "2026-06-03T14:52:57.079488Z",
+        created_at: "2026-06-03T14:52:57.079488Z",
+        updated_at: "2026-06-03T14:52:57.079488Z",
+        deleted_at: null,
+      },
+      message: "user restored",
+    })
   }),
 ]

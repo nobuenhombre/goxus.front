@@ -10,6 +10,7 @@ export interface User {
   email_verified_at: string | null
   created_at: string
   updated_at: string
+  deleted_at: string | null
 }
 
 export interface UsersResponse {
@@ -46,6 +47,73 @@ export async function fetchUsers(opts?: {
 /* Delete                                                             */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* Create                                                             */
+/* ------------------------------------------------------------------ */
+
+export async function createUser(data: {
+  name: string
+  email: string
+  password: string
+}): Promise<User> {
+  const token = getToken()
+  if (!token) throw new Error("Not authenticated")
+
+  const res = await apiFetchJSON<{ version: string; data: User }>(
+    "/api/v1/entity/user/",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  )
+  return res.data
+}
+
+export async function updateUser(
+  id: number,
+  data: { name: string; email: string },
+): Promise<User> {
+  const token = getToken()
+  if (!token) throw new Error("Not authenticated")
+
+  const res = await apiFetchJSON<{ version: string; data: User }>(
+    `/api/v1/entity/user/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+  )
+  return res.data
+}
+
+/* ------------------------------------------------------------------ */
+/* Change password                                                    */
+/* ------------------------------------------------------------------ */
+
+export async function changeUserPassword(
+  id: number,
+  password: string,
+): Promise<void> {
+  const token = getToken()
+  if (!token) throw new Error("Not authenticated")
+
+  const res = await apiFetch(`/api/v1/entity/user/${id}/password`, {
+    method: "PUT",
+    body: JSON.stringify({ password }),
+  })
+
+  if (!res.ok) {
+    let errMsg = res.statusText || "Change password failed"
+    try {
+      const errBody = await res.json()
+      if (errBody?.error) errMsg = errBody.error
+    } catch {
+      // ignore parse errors
+    }
+    throw new Error(errMsg)
+  }
+}
+
 export async function deleteUser(id: number, signal?: AbortSignal): Promise<void> {
   const token = getToken()
   if (!token) throw new Error("Not authenticated")
@@ -65,4 +133,15 @@ export async function deleteUser(id: number, signal?: AbortSignal): Promise<void
     }
     throw new Error(errMsg)
   }
+}
+
+export async function restoreUser(id: number, signal?: AbortSignal): Promise<User> {
+  const token = getToken()
+  if (!token) throw new Error("Not authenticated")
+
+  const res = await apiFetchJSON<{ version: string; data: User }>(
+    `/api/v1/entity/user/${id}/restore`,
+    { method: "POST", signal },
+  )
+  return res.data
 }
