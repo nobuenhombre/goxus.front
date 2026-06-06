@@ -25,18 +25,22 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { logout } from "@/lib/auth"
 import { useLocalStorageString } from "@/hooks/use-local-storage"
-
-const navLinks = [
-  { label: "Overview", href: "/" },
-  { label: "Users", href: "/users" },
-  { label: "Roles", href: "/roles" },
-  { label: "Settings", href: "/settings" },
-]
+import { useMemo } from "react"
 
 export function AppHeader() {
   const { theme, setTheme } = useTheme()
   const router = useRouter()
   const userName = useLocalStorageString("goxus_user_name", "User")
+  const savedUsersQuery = useLocalStorageString("goxus_users_query", "")
+
+  const navLinks = useMemo(
+    () => [
+      { label: "Dashboard", href: "/" },
+      { label: "Users", href: savedUsersQuery ? `/users?${savedUsersQuery}` : "/users" },
+      { label: "Settings", href: "/settings" },
+    ],
+    [savedUsersQuery],
+  )
 
   const handleLogout = async () => {
     await logout()

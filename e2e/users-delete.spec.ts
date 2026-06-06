@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"
 
 test.describe("Users page — soft delete with filter=all", () => {
   test("deleted user stays visible when filter is all", async ({ page }) => {
@@ -46,6 +46,9 @@ test.describe("Users page — soft delete with filter=all", () => {
     // Click the actions menu (MoreHorizontal button inside this row)
     const actionsButton = userRow.getByRole("button").last()
     await actionsButton.click()
+
+    // Wait for dropdown menu to fully render and stabilize (prevents "element detached from DOM" flakiness)
+    await page.waitForTimeout(150)
 
     // Click Delete in the dropdown
     const deleteButton = page.getByRole("menuitem", { name: /delete/i })

@@ -16,6 +16,7 @@ export const handlers = [
           created_at: "2026-06-03T14:52:57.079488Z",
           updated_at: "2026-06-03T14:52:57.079488Z",
           deleted_at: null,
+          roles: "admin",
         },
       ],
       total_count: 1,

@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState, useMemo, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useMemo, useCallback, useRef, Suspense } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import {
   Search,
   Plus,
@@ -13,6 +13,10 @@ import {
   Clock,
   CheckCircle,
   RotateCcw,
+  ShieldCheck,
+  BarChart3,
+  Database,
+  ChevronsUpDown,
 } from "lucide-react"
 import {
   useReactTable,
@@ -50,18 +54,54 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-import { clearToken } from "@/lib/auth"
+import { clearToken, getUserEmail } from "@/lib/auth"
 import { fetchUsers, deleteUser, restoreUser, type User } from "@/lib/users"
 import { formatDate } from "@/lib/date"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Checkbox } from "@/components/ui/checkbox"
+import { fetchAllRoles, type RbacRole } from "@/lib/role"
 import { UsersActionDialog } from "./users-action-dialog"
 import { ChangePasswordDialog } from "./change-password-dialog"
+import { RolesDialog } from "./roles-dialog"
 import { DataTablePagination } from "@/components/data-table"
 
 /* ------------------------------------------------------------------ */
 /* Columns                                                            */
 /* ------------------------------------------------------------------ */
+
+const roleConfig: Record<
+  string,
+  {
+    icon: React.ComponentType<{ className?: string }>
+    className: string
+    colorClass: string
+  }
+> = {
+  Admin: {
+    icon: ShieldCheck,
+    className:
+      "bg-neutral-950/10 text-neutral-950 dark:bg-neutral-50/10 dark:text-neutral-50",
+    colorClass: "text-neutral-950 dark:text-neutral-50",
+  },
+  "Data Analytics": {
+    icon: BarChart3,
+    className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+    colorClass: "text-blue-700 dark:text-blue-300",
+  },
+  "Data Operator": {
+    icon: Database,
+    className:
+      "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+    colorClass: "text-green-700 dark:text-green-300",
+  },
+}
 
 const columns: ColumnDef<User>[] = [
   {
@@ -99,6 +139,36 @@ const columns: ColumnDef<User>[] = [
     ),
   },
   {
+    accessorKey: "roles",
+    header: "Roles",
+    cell: ({ row }) => {
+      const rolesStr = row.getValue<string>("roles")
+      if (!rolesStr) return <span className="text-muted-foreground">—</span>
+      const roleNames = rolesStr.split(", ").filter(Boolean)
+      return (
+        <div className="flex flex-wrap gap-1">
+          {roleNames.map((name) => {
+            const cfg = roleConfig[name]
+            const Icon = cfg?.icon ?? Shield
+            return (
+              <Badge
+                key={name}
+                variant="secondary"
+                className={cn(
+                  "h-6 gap-1.5 px-2.5 text-sm font-medium",
+                  cfg?.className ?? "",
+                )}
+              >
+                <Icon className="size-4" />
+                {name}
+              </Badge>
+            )
+          })}
+        </div>
+      )
+    },
+  },
+  {
     id: "actions",
     header: "",
     enableGlobalFilter: false,
@@ -109,25 +179,145 @@ const columns: ColumnDef<User>[] = [
 ]
 
 /* ------------------------------------------------------------------ */
-/* Page                                                                */
+/* Users page content (needs Suspense for useSearchParams)            */
 /* ------------------------------------------------------------------ */
 
-export default function UsersPage() {
+function UsersPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+
+  // --- URL-backed filter state ---
+  const search = searchParams.get("q") ?? ""
+  const statusFilter = (searchParams.get("status") as "all" | "active" | "deleted") ?? "all"
+  const emailFilter = (searchParams.get("email") as "all" | "verified" | "unverified") ?? "all"
+  const roleFilter = useMemo(
+    () => (searchParams.get("roles") ? searchParams.get("roles")!.split(",") : []),
+    [searchParams],
+  )
+  const page = Number(searchParams.get("page")) || 0
+  const pageSize = Number(searchParams.get("pageSize")) || 10
+
+  const updateParam = useCallback(
+    (key: string, value: string | null) => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (value === null) params.delete(key)
+      else params.set(key, value)
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    },
+    [searchParams, router, pathname],
+  )
+
+  const setSearch = (v: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (v) params.set("q", v)
+    else params.delete("q")
+    // Reset to page 0 when search changes
+    params.delete("page")
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const setStatusFilter = (v: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (v === "all") params.delete("status")
+    else params.set("status", v)
+    params.delete("page")
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const setEmailFilter = (v: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (v === "all") params.delete("email")
+    else params.set("email", v)
+    params.delete("page")
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const setRoleFilter = (v: string[] | ((prev: string[]) => string[])) => {
+    const next = typeof v === "function" ? v(roleFilter) : v
+    const params = new URLSearchParams(searchParams.toString())
+    if (next.length > 0) params.set("roles", next.join(","))
+    else params.delete("roles")
+    params.delete("page")
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const setPage = (n: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (n > 0) params.set("page", String(n))
+    else params.delete("page")
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  const setPageSize = (n: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (n !== 10) params.set("pageSize", String(n))
+    else params.delete("pageSize")
+    params.delete("page")
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }
+
+  // --- localStorage persistence ---
+  const LS_KEY = "goxus_users_query"
+
+  function saveToLS(value: string) {
+    localStorage.setItem(LS_KEY, value)
+    // Dispatch synthetic StorageEvent so same-tab subscribers (sidebar, header) update
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: LS_KEY, newValue: value }),
+    )
+  }
+
+  // Restore from localStorage on first mount if URL has no filter params
+  const restored = useRef(false)
+
+  useEffect(() => {
+    if (restored.current) return
+    restored.current = true
+
+    const hasFilters =
+      searchParams.has("q") ||
+      searchParams.has("status") ||
+      searchParams.has("email") ||
+      searchParams.has("roles")
+    if (hasFilters) {
+      // URL has filters — sync to localStorage
+      saveToLS(searchParams.toString())
+      return
+    }
+
+    const saved = localStorage.getItem(LS_KEY)
+    if (saved) {
+      router.replace(`${pathname}?${saved}`, { scroll: false })
+    }
+  }, [])
+
+  // Persist to localStorage on every filter change (skip first render)
+  const [skipLSSync, setSkipLSSync] = useState(true)
+
+  useEffect(() => {
+    if (skipLSSync) {
+      setSkipLSSync(false)
+      return
+    }
+    saveToLS(searchParams.toString())
+  }, [searchParams])
 
   // --- Data ---
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // --- Filters ---
-  const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "deleted">("all")
-  const [emailFilter, setEmailFilter] = useState<"all" | "verified" | "unverified">("all")
+  // --- Role filter sorted by allRoles order (not selection order) ---
+  const [allRoles, setAllRoles] = useState<RbacRole[]>([])
 
-  // --- Pagination ---
-  const [page, setPage] = useState(0)
-  const [pageSize, setPageSize] = useState(10)
+  const sortedRoleFilter = useMemo(
+    () =>
+      allRoles
+        .filter((r) => roleFilter.includes(r.name))
+        .map((r) => r.name),
+    [allRoles, roleFilter],
+  )
 
   // --- Dialogs ---
   const [deleteDialog, setDeleteDialog] = useState<User | null>(null)
@@ -135,6 +325,10 @@ export default function UsersPage() {
   const [actionOpen, setActionOpen] = useState(false)
   const [editUser, setEditUser] = useState<User | null>(null)
   const [passwordDialog, setPasswordDialog] = useState<User | null>(null)
+  const [rolesDialog, setRolesDialog] = useState<User | null>(null)
+
+  // --- Current user ---
+  const currentUserEmail = useMemo(() => getUserEmail(), [])
 
   /* ---------------------------------------------------------------- */
   /* Fetch all users                                                   */
@@ -176,6 +370,16 @@ export default function UsersPage() {
   }, [loadUsers])
 
   /* ---------------------------------------------------------------- */
+  /* Fetch all roles                                                   */
+  /* ---------------------------------------------------------------- */
+
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchAllRoles(controller.signal).then(setAllRoles).catch(() => {})
+    return () => controller.abort()
+  }, [])
+
+  /* ---------------------------------------------------------------- */
   /* Pre-filter: status + email_verified (non-column fields)          */
   /* ---------------------------------------------------------------- */
 
@@ -191,8 +395,15 @@ export default function UsersPage() {
     } else if (emailFilter === "unverified") {
       result = result.filter((u) => u.email_verified_at == null)
     }
+    if (roleFilter.length > 0) {
+      result = result.filter((u) => {
+        if (!u.roles) return false
+        const userRoles = u.roles.split(", ").filter(Boolean)
+        return userRoles.some((r) => roleFilter.includes(r))
+      })
+    }
     return result
-  }, [allUsers, statusFilter, emailFilter])
+  }, [allUsers, statusFilter, emailFilter, roleFilter])
 
   /* ---------------------------------------------------------------- */
   /* Text search (manual, no TanStack filtering)                      */
@@ -219,10 +430,14 @@ export default function UsersPage() {
   )
   const totalPages = Math.max(1, Math.ceil(searched.length / pageSize))
 
-  // Reset to page 0 when filters change
+  // Clamp page if it exceeds totalPages (e.g. filters reduce results)
   useEffect(() => {
-    setPage(0)
-  }, [search, statusFilter, emailFilter, pageSize])
+    if (page >= totalPages && page !== 0) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete("page")
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+  }, [page, totalPages, searchParams, router, pathname])
 
   /* ---------------------------------------------------------------- */
   /* TanStack Table — display only, no filtering, no pagination       */
@@ -282,13 +497,14 @@ export default function UsersPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Created</TableHead>
+                <TableHead>Roles</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 4 }).map((_, j) => (
+                  {Array.from({ length: 5 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -384,6 +600,87 @@ export default function UsersPage() {
             <TabsTrigger value="unverified">Unverified</TabsTrigger>
           </TabsList>
         </Tabs>
+        <Popover>
+          <PopoverTrigger
+            render={(props) => (
+              <Button
+                {...props}
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 data-[state=open]:bg-muted"
+              >
+                <Shield className="size-4" />
+                Roles
+                {roleFilter.length > 0 && (
+                  <div className="flex items-center gap-0.5">
+                    {sortedRoleFilter.map((name) => {
+                      const cfg = roleConfig[name]
+                      const Icon = cfg?.icon ?? Shield
+                      return (
+                        <span
+                          key={name}
+                          className="flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium"
+                        >
+                          <Icon className={cn("size-3", cfg?.colorClass)} />
+                          <span className="hidden sm:inline">{name}</span>
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+                <ChevronsUpDown className="size-3.5 text-muted-foreground" />
+              </Button>
+            )}
+          />
+          <PopoverContent className="w-56 p-2" align="start">
+            <div className="flex flex-col gap-0.5">
+              {allRoles.length > 0 ? (
+                allRoles.map((role) => {
+                  const cfg = roleConfig[role.name]
+                  const Icon = cfg?.icon ?? Shield
+                  const selected = roleFilter.includes(role.name)
+                  return (
+                    <div
+                      key={role.id}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
+                      onClick={() => {
+                        setRoleFilter((prev) =>
+                          selected
+                            ? prev.filter((r) => r !== role.name)
+                            : [...new Set([...prev, role.name])],
+                        )
+                      }}
+                    >
+                      <Checkbox checked={selected} />
+                      <Icon
+                        className={cn(
+                          "size-4",
+                          cfg?.colorClass ?? "text-muted-foreground",
+                        )}
+                      />
+                      {role.name}
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="py-4 text-center text-xs text-muted-foreground">
+                  No roles available
+                </p>
+              )}
+            </div>
+            {roleFilter.length > 0 && (
+              <>
+                <hr className="mx-1 my-1.5 border-t border-border" />
+                <button
+                  onClick={() => setRoleFilter([])}
+                  className="w-full cursor-pointer rounded-md px-2 py-1.5 text-center text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  Clear filter
+                </button>
+              </>
+            )}
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Table */}
@@ -464,9 +761,7 @@ export default function UsersPage() {
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() =>
-                                    alert("Manage roles — coming soon")
-                                  }
+                                  onClick={() => setRolesDialog(user)}
                                 >
                                   <Shield className="mr-2 size-4" />
                                   Roles
@@ -477,23 +772,28 @@ export default function UsersPage() {
                                   <KeyRound className="mr-2 size-4" />
                                   Change Password
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
                                 {user.deleted_at ? (
-                                  <DropdownMenuItem
-                                    onClick={() => handleRestore(user)}
-                                  >
-                                    <RotateCcw className="mr-2 size-4" />
-                                    Restore
-                                  </DropdownMenuItem>
-                                ) : (
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
-                                    onClick={() => setDeleteDialog(user)}
-                                  >
-                                    <Trash2 className="mr-2 size-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                )}
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      onClick={() => handleRestore(user)}
+                                    >
+                                      <RotateCcw className="mr-2 size-4" />
+                                      Restore
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : user.email !== currentUserEmail ? (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="text-destructive focus:text-destructive"
+                                      onClick={() => setDeleteDialog(user)}
+                                    >
+                                      <Trash2 className="mr-2 size-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                ) : null}
                               </DropdownMenuGroup>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -523,7 +823,7 @@ export default function UsersPage() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="h-24 bg-background text-center text-muted-foreground"
                 >
                   {search
@@ -566,6 +866,15 @@ export default function UsersPage() {
         userName={passwordDialog?.name ?? ""}
         onSuccess={refresh}
       />
+      <RolesDialog
+        open={!!rolesDialog}
+        onOpenChange={(open) => {
+          if (!open) setRolesDialog(null)
+        }}
+        userId={rolesDialog?.id ?? 0}
+        userName={rolesDialog?.name ?? ""}
+        onSuccess={refresh}
+      />
       <Dialog
         open={!!deleteDialog}
         onOpenChange={(open) => {
@@ -599,5 +908,49 @@ export default function UsersPage() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Page export (Suspense wrapper for useSearchParams)                 */
+/* ------------------------------------------------------------------ */
+
+export default function UsersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold tracking-tight">Users</h1>
+          </div>
+          <div className="overflow-hidden rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Roles</TableHead>
+                  <TableHead className="w-12" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 5 }).map((_, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      }
+    >
+      <UsersPageContent />
+    </Suspense>
   )
 }

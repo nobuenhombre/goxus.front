@@ -37,12 +37,7 @@ import {
 } from "@/components/ui/sidebar"
 import { logout } from "@/lib/auth"
 import { useLocalStorageString } from "@/hooks/use-local-storage"
-
-const navItems = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Users", href: "/users", icon: Users },
-  { label: "Roles", href: "/roles", icon: Shield },
-]
+import { useMemo } from "react"
 
 const otherItems = [
   { label: "Settings", href: "/settings", icon: Settings },
@@ -53,6 +48,15 @@ export function AppSidebar() {
   const router = useRouter()
   const userName = useLocalStorageString("goxus_user_name", "User")
   const userEmail = useLocalStorageString("goxus_user_email", "user@example.com")
+  const savedUsersQuery = useLocalStorageString("goxus_users_query", "")
+
+  const navItems = useMemo(
+    () => [
+      { label: "Dashboard", href: "/", icon: LayoutDashboard },
+      { label: "Users", href: savedUsersQuery ? `/users?${savedUsersQuery}` : "/users", icon: Users },
+    ],
+    [savedUsersQuery],
+  )
 
   const handleLogout = async () => {
     await logout()
