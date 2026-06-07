@@ -38,6 +38,16 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Slider } from "@/components/ui/slider"
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+} from "@/components/ui/combobox"
+import { CheckIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
 /* -------------------------------------------------------------------- */
@@ -57,41 +67,14 @@ interface FieldProps {
 }
 
 // ── listChecks ───────────────────────────────────────────────────────
-// Value format: {"value": 1} (single select key) or
-//               {"value": {"1": true, "2": false}} (multi-select map)
+// Value format: {"value": {"1": true, "2": false}} (multi-select map)
 // Available values: {"value": {"1": "Light", "2": "Dark"}}
+// Always renders Checkboxes (multi-select), never RadioGroup.
 
 function ListChecksField({ definition, value, onChange }: FieldProps) {
   const options = extractSettingOptions(definition.available_values)
   const rawCurrent = extractSettingValue(value)
 
-  // Detect mode: single key (number/string) vs map of booleans
-  const isSingleSelect =
-    rawCurrent != null && typeof rawCurrent !== "object"
-
-  if (isSingleSelect) {
-    // ── Single-select mode (like Theme: {"value": 1}) ──
-    const selectedKey = String(rawCurrent ?? "")
-
-    return (
-      <RadioGroup
-        value={selectedKey}
-        onValueChange={(v) => onChange({ value: v ? Number(v) : null })}
-      >
-        {Object.entries(options).map(([key, label]) => (
-          <label
-            key={key}
-            className="flex cursor-pointer items-center gap-2 text-sm"
-          >
-            <RadioGroupItem value={key} />
-            {label}
-          </label>
-        ))}
-      </RadioGroup>
-    )
-  }
-
-  // ── Multi-select mode: {"value": {"1": true, "2": false}} ──
   const checkedMap =
     rawCurrent && typeof rawCurrent === "object"
       ? (rawCurrent as Record<string, boolean>)
@@ -132,7 +115,7 @@ function ListRadiosField({ definition, value, onChange }: FieldProps) {
   return (
     <RadioGroup
       value={currentKey}
-      onValueChange={(v) => onChange({ value: v ? Number(v) : null })}
+      onValueChange={(v) => onChange({ value: isNaN(Number(v)) ? v : Number(v) })}
     >
       {Object.entries(options).map(([key, label]) => (
         <label
@@ -158,7 +141,7 @@ function SelectSimpleField({ definition, value, onChange }: FieldProps) {
   return (
     <Select
       value={currentKey}
-      onValueChange={(v) => onChange({ value: v ? Number(v) : null })}
+      onValueChange={(v) => onChange({ value: isNaN(Number(v)) ? v : Number(v) })}
     >
       <SelectTrigger className="w-50">
         <SelectValue placeholder="Select..." />
@@ -293,6 +276,122 @@ function UnknownField({ definition, value, onChange }: FieldProps) {
   )
 }
 
+// ── inputIntSlider ───────────────────────────────────────────────────
+// Value format: {"value": 30}
+// Available values: {"value": {"min": 15, "max": 120, "step": 15}}
+// Renders single-thumb Radix Slider + numeric label.
+
+function InputIntSliderField({ definition, value, onChange }: FieldProps) {
+  const rawAvailable = extractSettingValue(definition.available_values)
+  const rangeConfig =
+    rawAvailable && typeof rawAvailable === "object"
+      ? (rawAvailable as Record<string, number>)
+      : {}
+  const min = rangeConfig.min ?? 0
+  const max = rangeConfig.max ?? 100
+  const step = rangeConfig.step ?? 1
+  const currentValue = Number(extractSettingValue(value) ?? min)
+
+  return (
+    <div className="flex items-center gap-4 max-w-sm">
+      <Slider
+        value={[currentValue]}
+        onValueChange={([v]) => onChange({ value: v })}
+        min={min}
+        max={max}
+        step={step}
+        className="flex-1"
+      />
+      <span className="min-w-12 text-right text-sm tabular-nums text-muted-foreground">
+        {currentValue}
+      </span>
+    </div>
+  )
+}
+
+// ── inputIntSliderRange ──────────────────────────────────────────────
+// Value format: {"value": {"start": 150, "end": 300}}
+// Available values: {"value": {"min": 100, "max": 400, "step": 10}}
+// Renders dual-thumb Radix Slider + range label.
+
+function InputIntSliderRangeField({ definition, value, onChange }: FieldProps) {
+  const rawAvailable = extractSettingValue(definition.available_values)
+  const rangeConfig =
+    rawAvailable && typeof rawAvailable === "object"
+      ? (rawAvailable as Record<string, number>)
+      : {}
+  const min = rangeConfig.min ?? 0
+  const max = rangeConfig.max ?? 100
+  const step = rangeConfig.step ?? 1
+
+  const rawValue = extractSettingValue(value)
+  const rangeValue =
+    rawValue && typeof rawValue === "object"
+      ? (rawValue as Record<string, number>)
+      : {}
+  const startValue = rangeValue.start ?? min
+  const endValue = rangeValue.end ?? max
+
+  return (
+    <div className="flex items-center gap-4 max-w-sm">
+      <Slider
+        value={[startValue, endValue]}
+        onValueChange={([s, e]) => onChange({ value: { start: s, end: e } })}
+        min={min}
+        max={max}
+        step={step}
+        className="flex-1"
+      />
+      <span className="min-w-20 text-right text-sm tabular-nums text-muted-foreground whitespace-nowrap">
+        {startValue} – {endValue}
+      </span>
+    </div>
+  )
+}
+
+// ── selectWithSearch ─────────────────────────────────────────────────
+// Value format: {"value": "en"}
+// Available values: {"value": {"en": "English", "ru": "Русский"}}
+// Renders Base UI Combobox with search input.
+
+function SelectWithSearchField({ definition, value, onChange }: FieldProps) {
+  const options = extractSettingOptions(definition.available_values)
+  const currentKey = String(extractSettingValue(value) ?? "")
+
+  return (
+    <Combobox
+      value={currentKey}
+      onValueChange={(v) => {
+        if (v == null) return
+        onChange({ value: isNaN(Number(v)) ? v : Number(v) })
+      }}
+    >
+      <ComboboxInput
+        placeholder="Search..."
+        showClear
+        className="w-60"
+      />
+      <ComboboxContent>
+        <ComboboxList>
+          {Object.entries(options).map(([key, label]) => (
+            <ComboboxItem key={key} value={key}>
+              <span
+                className={cn(
+                  "absolute right-2 flex size-4 items-center justify-center",
+                  currentKey === key ? "opacity-100" : "opacity-0",
+                )}
+              >
+                <CheckIcon className="size-4" />
+              </span>
+              {label}
+            </ComboboxItem>
+          ))}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  )
+}
+
 /* -------------------------------------------------------------------- */
 /* Setting field registry                                                */
 /* -------------------------------------------------------------------- */
@@ -303,13 +402,13 @@ const fieldRegistry: Record<string, React.ComponentType<FieldProps>> = {
   inputIntNumberField: InputIntNumberField,
   inputFloatNumberField: InputFloatNumberField,
   textareaField: TextareaField,
-  inputIntSlider: InputTextField,
-  inputIntSliderRange: InputTextField,
+  inputIntSlider: InputIntSliderField,
+  inputIntSliderRange: InputIntSliderRangeField,
   switch: SwitchField,
   listChecks: ListChecksField,
   listRadios: ListRadiosField,
   selectSimple: SelectSimpleField,
-  selectWithSearch: SelectSimpleField,
+  selectWithSearch: SelectWithSearchField,
 }
 
 /* -------------------------------------------------------------------- */
