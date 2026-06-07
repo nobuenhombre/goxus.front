@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
+import { SettingsSidebarNav } from "@/components/settings-sidebar-nav"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
@@ -46,7 +47,7 @@ import {
   ComboboxList,
   ComboboxItem,
 } from "@/components/ui/combobox"
-import { CheckIcon } from "lucide-react"
+import { CheckIcon, Palette, Bell, UserCog, Monitor, Settings2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -449,6 +450,20 @@ function SettingsPageContent() {
   const [dirtyValues, setDirtyValues] = useState<Record<number, unknown>>({})
   const [savingId, setSavingId] = useState<number | null>(null)
 
+  // --- Selected settings group ---
+  const [selectedGroup, setSelectedGroup] = useState<string>("")
+
+  // Map group names to icons
+  const groupIcon = useCallback((name: string) => {
+    const lower = name.toLowerCase()
+    if (lower.includes("profile") || lower.includes("user")) return <UserCog size={18} />
+    if (lower.includes("appearance") || lower.includes("theme")) return <Palette size={18} />
+    if (lower.includes("notif")) return <Bell size={18} />
+    if (lower.includes("display") || lower.includes("monitor")) return <Monitor size={18} />
+    if (lower.includes("account")) return <UserCog size={18} />
+    return <Settings2 size={18} />
+  }, [])
+
   // Build a lookup of user settings by settings_id
   const userSettingsByDefId = useMemo(() => {
     const map: Record<number, UserSetting> = {}
@@ -563,6 +578,91 @@ function SettingsPageContent() {
     }
   }
 
+  // --- Build sidebar nav items from group keys ---
+  const groupKeys = useMemo(() => Object.keys(grouped), [grouped])
+
+  const sidebarNavItems = useMemo(
+    () =>
+      groupKeys.map((key) => ({
+        id: key,
+        title: key,
+        icon: groupIcon(key),
+      })),
+    [groupKeys, groupIcon],
+  )
+
+  // Set first group as default when data loads
+  useEffect(() => {
+    if (!selectedGroup && groupKeys.length > 0) {
+      setSelectedGroup(groupKeys[0])
+    }
+  }, [groupKeys, selectedGroup])
+
+  // --- Render content for the currently selected group ---
+  const renderSelectedGroupContent = () => {
+    if (!selectedGroup || !grouped[selectedGroup]) return null
+    const settings = grouped[selectedGroup]
+    return (
+      <div className="flex flex-1 flex-col">
+        <div className="flex-none">
+          <h3 className="text-lg font-medium">{selectedGroup}</h3>
+          <p className="text-sm text-muted-foreground">
+            Customize your {selectedGroup.toLowerCase()} settings.
+          </p>
+        </div>
+        <Separator className="my-4 flex-none" />
+        <div className="faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12">
+          <div className="-mx-1 px-1.5 lg:max-w-xl">
+            {settings.map((def) => {
+              const FieldComponent =
+                fieldRegistry[def.type] || UnknownField
+              const isDirty = def.id in dirtyValues
+              const isSaving = savingId === def.id
+              const currentValue = getValue(def)
+
+              return (
+                <div key={def.id} className="space-y-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-sm font-medium">
+                        {def.name}
+                      </Label>
+                      {def.description && (
+                        <p className="text-xs text-muted-foreground">
+                          {def.description}
+                        </p>
+                      )}
+                    </div>
+                    {isDirty && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleSave(def)}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? "Saving..." : "Save"}
+                      </Button>
+                    )}
+                  </div>
+
+                  <FieldComponent
+                    definition={def}
+                    value={currentValue}
+                    onChange={(newValue) =>
+                      setDirtyValues((prev) => ({
+                        ...prev,
+                        [def.id]: newValue,
+                      }))
+                    }
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // --- Loading state ---
   if (loading) {
     return (
@@ -639,65 +739,21 @@ function SettingsPageContent() {
         </p>
       </div>
 
-      <Separator />
+      <Separator className="my-4 lg:my-6" />
 
-      {/* Settings by group */}
-      {Object.entries(grouped).map(([groupName, settings]) => (
-        <Card key={groupName}>
-          <CardHeader>
-            <CardTitle className="text-lg">{groupName}</CardTitle>
-            <CardDescription>
-              Customize your {groupName.toLowerCase()} settings.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {settings.map((def) => {
-              const FieldComponent =
-                fieldRegistry[def.type] || UnknownField
-              const isDirty = def.id in dirtyValues
-              const isSaving = savingId === def.id
-              const currentValue = getValue(def)
-
-              return (
-                <div key={def.id} className="space-y-2">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-1">
-                      <Label className="text-sm font-medium">
-                        {def.name}
-                      </Label>
-                      {def.description && (
-                        <p className="text-xs text-muted-foreground">
-                          {def.description}
-                        </p>
-                      )}
-                    </div>
-                    {isDirty && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleSave(def)}
-                        disabled={isSaving}
-                      >
-                        {isSaving ? "Saving..." : "Save"}
-                      </Button>
-                    )}
-                  </div>
-
-                  <FieldComponent
-                    definition={def}
-                    value={currentValue}
-                    onChange={(newValue) =>
-                      setDirtyValues((prev) => ({
-                        ...prev,
-                        [def.id]: newValue,
-                      }))
-                    }
-                  />
-                </div>
-              )
-            })}
-          </CardContent>
-        </Card>
-      ))}
+      {/* Two-column layout: sidebar nav + selected group content */}
+      <div className="flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12">
+        <aside className="top-0 lg:sticky lg:w-1/5">
+          <SettingsSidebarNav
+            items={sidebarNavItems}
+            selectedId={selectedGroup}
+            onSelect={setSelectedGroup}
+          />
+        </aside>
+        <div className="flex w-full overflow-y-hidden p-1">
+          {renderSelectedGroupContent()}
+        </div>
+      </div>
     </div>
   )
 }
