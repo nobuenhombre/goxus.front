@@ -55,10 +55,11 @@ import {
 } from "@/components/ui/dialog"
 
 import { clearToken, getUserEmail } from "@/lib/auth"
-import { fetchUsers, deleteUser, restoreUser, type User } from "@/lib/users"
+import { fetchUsers, deleteUser, restoreUser, getAvatarUrl, type User } from "@/lib/users"
 import { formatDate } from "@/lib/date"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Popover,
@@ -104,6 +105,25 @@ const roleConfig: Record<
 }
 
 const columns: ColumnDef<User>[] = [
+  {
+    id: "avatar",
+    header: "",
+    enableGlobalFilter: false,
+    enableSorting: false,
+    size: 40,
+    cell: ({ row }) => {
+      const user = row.original
+      const avatarSrc = getAvatarUrl(user.id)
+      return (
+        <Avatar className="size-8">
+          <AvatarImage src={avatarSrc} alt={user.name} />
+          <AvatarFallback className="text-xs">
+            {user.name.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+      )
+    },
+  },
   {
     accessorKey: "name",
     header: "Name",
@@ -504,7 +524,7 @@ function UsersPageContent() {
             <TableBody>
               {Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 5 }).map((_, j) => (
+                  {Array.from({ length: 6 }).map((_, j) => (
                     <TableCell key={j}>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -823,7 +843,7 @@ function UsersPageContent() {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="h-24 bg-background text-center text-muted-foreground"
                 >
                   {search
@@ -937,7 +957,7 @@ export default function UsersPage() {
               <TableBody>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 5 }).map((_, j) => (
+                    {Array.from({ length: 6 }).map((_, j) => (
                       <TableCell key={j}>
                         <Skeleton className="h-4 w-full" />
                       </TableCell>

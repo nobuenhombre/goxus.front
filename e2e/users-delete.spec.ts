@@ -39,6 +39,9 @@ test.describe("Users page — soft delete with filter=all", () => {
     const searchInput = page.locator('input[placeholder="Filter users..."]')
     await searchInput.fill(testEmail)
 
+    // Wait for React to process the onChange and re-render.
+    await expect(searchInput).toHaveValue(testEmail)
+
     // Find the test user row
     const userRow = page.getByRole("row").filter({ hasText: testEmail })
     await expect(userRow).toBeVisible({ timeout: 10000 })
@@ -47,12 +50,15 @@ test.describe("Users page — soft delete with filter=all", () => {
     const actionsButton = userRow.getByRole("button").last()
     await actionsButton.click()
 
-    // Wait for dropdown menu to fully render and stabilize (prevents "element detached from DOM" flakiness)
-    await page.waitForTimeout(150)
+    // Wait for dropdown portal content to appear before interacting with items
+    // Prevents race conditions where the portal hasn't rendered yet or React
+    // re-renders from an earlier router.replace close the menu mid-flight
+    await expect(
+      page.locator('[data-slot="dropdown-menu-content"]'),
+    ).toBeVisible({ timeout: 5000 })
 
     // Click Delete in the dropdown
     const deleteButton = page.getByRole("menuitem", { name: /delete/i })
-    await expect(deleteButton).toBeVisible()
     await deleteButton.click()
 
     // Confirm delete dialog
@@ -69,6 +75,9 @@ test.describe("Users page — soft delete with filter=all", () => {
 
     // VERIFY: the actions now show "Restore" instead of "Delete"
     await actionsButton.click()
+    await expect(
+      page.locator('[data-slot="dropdown-menu-content"]'),
+    ).toBeVisible({ timeout: 5000 })
     await expect(page.getByRole("menuitem", { name: /restore/i })).toBeVisible()
     await expect(page.getByRole("menuitem", { name: /delete/i })).not.toBeVisible()
   })

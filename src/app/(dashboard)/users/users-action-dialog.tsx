@@ -25,7 +25,15 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { createUser, updateUser, type User } from "@/lib/users"
+import {
+  createUser,
+  updateUser,
+  uploadAvatar,
+  deleteAvatar,
+  getAvatarUrl,
+  type User,
+} from "@/lib/users"
+import { AvatarDropZone } from "@/components/avatar-drop-zone"
 
 const createSchema = z
   .object({
@@ -62,6 +70,9 @@ export function UsersActionDialog({
 }: UsersActionDialogProps) {
   const isEdit = !!currentRow
   const [submitting, setSubmitting] = useState(false)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const [avatarVersion, setAvatarVersion] = useState(0)
 
   const createForm = useForm<CreateForm>({
     resolver: zodResolver(createSchema),
@@ -83,6 +94,17 @@ export function UsersActionDialog({
 
   const currentForm = isEdit ? editForm : createForm
 
+  // Reset avatar state when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setAvatarFile(null)
+      setAvatarError(null)
+      // Bump version to reload avatar URL
+      const v = Date.now()
+      setAvatarVersion(v)
+    }
+  }, [open])
+
   // Sync edit form fields when dialog opens with a user
   useEffect(() => {
     if (open && currentRow) {
@@ -93,11 +115,25 @@ export function UsersActionDialog({
   async function onSubmitCreate(values: CreateForm) {
     setSubmitting(true)
     try {
-      await createUser({
+      const user = await createUser({
         name: values.name,
         email: values.email,
         password: values.password,
       })
+
+      // Upload avatar if selected
+      if (avatarFile) {
+        try {
+          await uploadAvatar(user.id, avatarFile)
+          toast.success("Avatar uploaded")
+        } catch (err) {
+          const msg =
+            err instanceof Error ? err.message : "Failed to upload avatar"
+          setAvatarError(msg)
+          toast.error(msg)
+        }
+      }
+
       toast.success("User created successfully")
       createForm.reset()
       onOpenChange(false)
@@ -118,6 +154,21 @@ export function UsersActionDialog({
         name: values.name,
         email: values.email,
       })
+
+      // Upload avatar if selected
+      if (avatarFile) {
+        try {
+          await uploadAvatar(currentRow.id, avatarFile)
+          toast.success("Avatar uploaded")
+          setAvatarVersion(Date.now())
+        } catch (err) {
+          const msg =
+            err instanceof Error ? err.message : "Failed to upload avatar"
+          setAvatarError(msg)
+          toast.error(msg)
+        }
+      }
+
       toast.success("User updated successfully")
       editForm.reset(values)
       onOpenChange(false)
@@ -130,13 +181,38 @@ export function UsersActionDialog({
     }
   }
 
+  async function handleDeleteAvatar() {
+    if (!currentRow) return
+    try {
+      await deleteAvatar(currentRow.id)
+      setAvatarVersion(Date.now())
+      toast.success("Avatar removed")
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to delete avatar"
+      toast.error(msg)
+    }
+  }
+
   function handleClose(open: boolean) {
     if (!open) {
       createForm.reset()
       editForm.reset({ name: "", email: "" })
+      setAvatarFile(null)
+      setAvatarError(null)
     }
     onOpenChange(open)
   }
+
+  // Get current initials for the avatar fallback
+  const initials = currentRow
+    ? currentRow.name.charAt(0).toUpperCase()
+    : (createForm.watch("name") || "?").charAt(0).toUpperCase()
+
+  // Avatar URL for edit mode (bust cache with version)
+  const editAvatarUrl = currentRow
+    ? `${getAvatarUrl(currentRow.id)}&v=${avatarVersion}`
+    : null
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -150,6 +226,20 @@ export function UsersActionDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[70vh] overflow-y-auto py-1 pe-3">
+          {/* Avatar field — always first */}
+          <div className="mb-6 flex justify-center">
+            <AvatarDropZone
+              currentAvatarUrl={isEdit ? editAvatarUrl : null}
+              initials={initials}
+              onFileSelect={(file) => {
+                setAvatarFile(file)
+                setAvatarError(null)
+              }}
+              onDelete={isEdit ? handleDeleteAvatar : undefined}
+              error={avatarError}
+            />
+          </div>
+
           {isEdit ? (
             <Form {...editForm}>
               <form

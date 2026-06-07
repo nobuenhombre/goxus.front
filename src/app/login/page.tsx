@@ -56,7 +56,7 @@ export default function LoginPage() {
       })
 
       setToken(data.token)
-      setUserInfo(data.name, data.email)
+      setUserInfo(data.name, data.email, data.user_id)
       router.push("/")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")

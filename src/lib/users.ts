@@ -146,3 +146,69 @@ export async function restoreUser(id: number, signal?: AbortSignal): Promise<Use
   )
   return res.data
 }
+
+/* ------------------------------------------------------------------ */
+/* Avatar helpers                                                      */
+/* ------------------------------------------------------------------ */
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+
+export function getAvatarUrl(userId: number): string {
+  const url = `${API_BASE}/api/v1/entity/user/${userId}/avatar`
+  return `${url}?t=${Date.now()}`
+}
+
+export async function uploadAvatar(
+  userId: number,
+  file: File,
+  signal?: AbortSignal,
+): Promise<void> {
+  const token = getToken()
+  if (!token) throw new Error("Not authenticated")
+
+  const formData = new FormData()
+  formData.append("avatar", file)
+
+  const res = await fetch(`${API_BASE}/api/v1/entity/user/${userId}/avatar`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+    signal,
+  })
+
+  if (!res.ok) {
+    let errMsg = "Upload failed"
+    try {
+      const body = await res.json()
+      if (body?.error) errMsg = body.error
+    } catch {
+      // ignore
+    }
+    throw new Error(errMsg)
+  }
+}
+
+export async function deleteAvatar(
+  userId: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  const token = getToken()
+  if (!token) throw new Error("Not authenticated")
+
+  const res = await fetch(`${API_BASE}/api/v1/entity/user/${userId}/avatar`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  })
+
+  if (!res.ok) {
+    let errMsg = "Delete failed"
+    try {
+      const body = await res.json()
+      if (body?.error) errMsg = body.error
+    } catch {
+      // ignore
+    }
+    throw new Error(errMsg)
+  }
+}

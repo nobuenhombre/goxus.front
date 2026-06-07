@@ -11,7 +11,7 @@ import {
   LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import {
   DropdownMenu,
@@ -23,15 +23,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { logout } from "@/lib/auth"
+import { logout, getUserId } from "@/lib/auth"
+import { getAvatarUrl } from "@/lib/users"
 import { useLocalStorageString } from "@/hooks/use-local-storage"
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 export function AppHeader() {
   const { theme, setTheme } = useTheme()
   const router = useRouter()
   const userName = useLocalStorageString("goxus_user_name", "User")
   const savedUsersQuery = useLocalStorageString("goxus_users_query", "")
+
+  // SSR-safe avatar URL: useState ensures React Compiler doesn't auto-memoize
+  // the getUserId() call (which returns null during SSR).
+  // useEffect reads localStorage after hydration and triggers a re-render.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  useEffect(() => {
+    const uid = getUserId()
+    if (uid) {
+      setAvatarUrl(getAvatarUrl(uid))
+    }
+  }, [])
 
   const navLinks = useMemo(
     () => [
@@ -104,6 +116,7 @@ export function AppHeader() {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Avatar className="size-8">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={userName} />}
               <AvatarFallback className="bg-muted">
                 {userName.charAt(0).toUpperCase()}
               </AvatarFallback>

@@ -46,6 +46,13 @@ test.describe("Users page — edit dialog form fields", () => {
     // Search for the first user to narrow the table (avoids pagination issues)
     await page.locator('input[placeholder="Filter users..."]').fill(email1)
 
+    // Wait for React to process the onChange and re-render with the new value.
+    // This ensures router.replace has completed and the page is stable before
+    // interacting with any portal-based dropdown (prevents portal remount race).
+    await expect(
+      page.locator('input[placeholder="Filter users..."]'),
+    ).toHaveValue(email1)
+
     // ── Open edit for first user ──
     const user1Row = page.getByRole("row").filter({ hasText: email1 })
     await expect(user1Row).toBeVisible({ timeout: 10000 })
@@ -53,8 +60,10 @@ test.describe("Users page — edit dialog form fields", () => {
     // Open actions menu
     const user1Actions = user1Row.getByRole("button").last()
     await user1Actions.click()
-    // Wait for dropdown menu to fully render and stabilize (prevents "element detached from DOM" flakiness)
-    await page.waitForTimeout(150)
+    // Wait for dropdown portal content before clicking menuitem
+    await expect(
+      page.locator('[data-slot="dropdown-menu-content"]'),
+    ).toBeVisible({ timeout: 5000 })
     await page.getByRole("menuitem", { name: /edit/i }).click()
 
     // Dialog should appear with user1's data
@@ -71,14 +80,22 @@ test.describe("Users page — edit dialog form fields", () => {
     // Search for the second user
     await page.locator('input[placeholder="Filter users..."]').fill(email2)
 
+    // Wait for React to process the onChange and re-render.
+    await expect(
+      page.locator('input[placeholder="Filter users..."]'),
+    ).toHaveValue(email2)
+
     // ── Open edit for second user ──
     const user2Row = page.getByRole("row").filter({ hasText: email2 })
     await expect(user2Row).toBeVisible({ timeout: 10000 })
 
+    // Open actions menu (second user)
     const user2Actions = user2Row.getByRole("button").last()
     await user2Actions.click()
-    // Wait for dropdown menu to fully render and stabilize
-    await page.waitForTimeout(150)
+    // Wait for dropdown portal content before clicking menuitem
+    await expect(
+      page.locator('[data-slot="dropdown-menu-content"]'),
+    ).toBeVisible({ timeout: 5000 })
     await page.getByRole("menuitem", { name: /edit/i }).click()
 
     // Dialog should appear with user2's data — NOT user1's

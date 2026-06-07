@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081"
 
 test.describe("Users page — soft_deleted filter (all|active|deleted)", () => {
   test("filter tabs correctly show/hide deleted users", async ({ page }) => {

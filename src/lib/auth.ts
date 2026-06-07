@@ -52,10 +52,13 @@ export function isAuthenticated(): boolean {
 /* User info helpers                                                   */
 /* ------------------------------------------------------------------ */
 
-export function setUserInfo(name: string, email: string): void {
+export function setUserInfo(name: string, email: string, id?: number): void {
   if (typeof window === "undefined") return
   localStorage.setItem(USER_NAME_KEY, name)
   localStorage.setItem(USER_EMAIL_KEY, email)
+  if (id !== undefined) {
+    localStorage.setItem("goxus_user_id", String(id))
+  }
 }
 
 export function getUserName(): string | null {
@@ -68,10 +71,17 @@ export function getUserEmail(): string | null {
   return localStorage.getItem(USER_EMAIL_KEY)
 }
 
+export function getUserId(): number | null {
+  if (typeof window === "undefined") return null
+  const v = localStorage.getItem("goxus_user_id")
+  return v ? Number(v) : null
+}
+
 export function clearUserInfo(): void {
   if (typeof window === "undefined") return
   localStorage.removeItem(USER_NAME_KEY)
   localStorage.removeItem(USER_EMAIL_KEY)
+  localStorage.removeItem("goxus_user_id")
 }
 
 /* ------------------------------------------------------------------ */
