@@ -40,13 +40,10 @@ test.describe("Settings page", () => {
     const settingRow = (card: ReturnType<typeof page.locator>, name: string) =>
       card.locator("div").filter({ hasText: name }).first()
 
-    // ── 1. Appearance → listRadios (RadioGroup) ────────────────────
+    // ── 1. Appearance → listChecks (checkboxes) ───────────────────
     const appearanceCard = allCards.nth(0)
-    await expect(appearanceCard.getByRole("radio")).toHaveCount(2)
-    const checkedRadio = await appearanceCard.locator(
-      '[role="radio"][aria-checked="true"]',
-    ).count()
-    expect(checkedRadio).toBeGreaterThanOrEqual(1)
+    await expect(appearanceCard.getByRole("checkbox").first()).toBeVisible()
+    await expect(appearanceCard.getByRole("checkbox").first()).toBeEnabled()
 
     // ── 2. Notifications → listRadios + switch ────────────────────
     const notificationsCard = allCards.nth(1)
@@ -130,9 +127,9 @@ test.describe("Settings page", () => {
     await expect(page.locator('[data-slot="card"]').first()).toBeVisible({ timeout: 15000 })
 
     const appearanceCard = page.locator('[data-slot="card"]').nth(0)
-    const uncheckedRadio = appearanceCard.locator('[role="radio"][aria-checked="false"]')
-    await expect(uncheckedRadio.first()).toBeVisible()
-    await uncheckedRadio.first().click()
+    const firstCheckbox = appearanceCard.getByRole("checkbox").first()
+    await expect(firstCheckbox).toBeVisible()
+    await firstCheckbox.click()
 
     const saveButton = page.getByRole("button", { name: /save/i })
     await expect(saveButton).toBeVisible()
@@ -240,7 +237,9 @@ test.describe("Settings page", () => {
     // Wait for popup content
     await expect(page.locator('[data-slot="combobox-content"]')).toBeVisible({ timeout: 5000 })
 
-    // Select a different option (use keyboard)
+    // Select a different option (press ArrowDown 3 times to ensure different value)
+    await page.keyboard.press("ArrowDown")
+    await page.keyboard.press("ArrowDown")
     await page.keyboard.press("ArrowDown")
     await page.keyboard.press("Enter")
 
