@@ -20,7 +20,7 @@ export default defineConfig({
       command: "make -C .. run-front",
       url: "http://localhost:3000",
       env: { NEXT_PUBLIC_API_URL: "http://localhost:8081" },
-      reuseExistingServer: true,
+      reuseExistingServer: false,
       timeout: 30_000,
     },
   ],

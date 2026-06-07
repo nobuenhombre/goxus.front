@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo, useCallback, Suspense } from "react"
+import { useEffect, useState, useMemo, useCallback, useRef, Suspense } from "react"
 import { useRouter } from "next/navigation"
 
 import { getUserId, clearToken } from "@/lib/auth"
@@ -26,7 +26,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
 import { SettingsSidebarNav } from "@/components/settings-sidebar-nav"
-import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -358,6 +357,7 @@ function InputIntSliderRangeField({ definition, value, onChange }: FieldProps) {
 function SelectWithSearchField({ definition, value, onChange }: FieldProps) {
   const options = extractSettingOptions(definition.available_values)
   const currentKey = String(extractSettingValue(value) ?? "")
+  const itemKeys = Object.keys(options)
 
   return (
     <Combobox
@@ -366,6 +366,8 @@ function SelectWithSearchField({ definition, value, onChange }: FieldProps) {
         if (v == null) return
         onChange({ value: isNaN(Number(v)) ? v : Number(v) })
       }}
+      items={itemKeys}
+      itemToStringLabel={(key) => options[key as string]}
     >
       <ComboboxInput
         placeholder="Search..."
@@ -374,7 +376,7 @@ function SelectWithSearchField({ definition, value, onChange }: FieldProps) {
       />
       <ComboboxContent>
         <ComboboxList>
-          {Object.entries(options).map(([key, label]) => (
+          {(key: string) => (
             <ComboboxItem key={key} value={key}>
               <span
                 className={cn(
@@ -384,9 +386,9 @@ function SelectWithSearchField({ definition, value, onChange }: FieldProps) {
               >
                 <CheckIcon className="size-4" />
               </span>
-              {label}
+              {options[key]}
             </ComboboxItem>
-          ))}
+          )}
         </ComboboxList>
       </ComboboxContent>
     </Combobox>
@@ -448,7 +450,9 @@ function SettingsPageContent() {
   // --- Editable state ---
   // Map keyed by definition.id, stores the new value in {"value": <actual>} format
   const [dirtyValues, setDirtyValues] = useState<Record<number, unknown>>({})
-  const [savingId, setSavingId] = useState<number | null>(null)
+
+  // Per-setting debounce timers (1 s after last change)
+  const saveTimersRef = useRef<Record<number, ReturnType<typeof setTimeout> | null>>({})
 
   // --- Selected settings group ---
   const [selectedGroup, setSelectedGroup] = useState<string>("")
@@ -533,50 +537,81 @@ function SettingsPageContent() {
     return () => controller.abort()
   }, [loadData])
 
-  // --- Save single setting ---
-  const handleSave = async (def: SettingsDefinition) => {
-    if (!userId) return
-    const value = dirtyValues[def.id]
-    if (value === undefined) return
+  // --- Auto-save: debounce timer (1 s after last change) ---
+  const doSave = useCallback(
+    async (def: SettingsDefinition, value: unknown) => {
+      if (!userId) return
+      if (value === undefined) return
 
-    setSavingId(def.id)
-    try {
-      await upsertUserSetting(userId, def.id, value)
-      // Update local state so displayed value reflects saved state
-      setUserSettings((prev) => {
-        const existing = prev.find((us) => us.settings_id === def.id)
-        if (existing) {
-          return prev.map((us) =>
-            us.settings_id === def.id ? { ...us, value } : us,
-          )
-        }
-        return [
-          ...prev,
-          {
-            user_settings_id: 0,
-            settings_id: def.id,
-            type: def.type,
-            group: def.group,
-            name: def.name,
-            description: def.description,
-            available_values: def.available_values,
-            value,
-          },
-        ]
-      })
-      setDirtyValues((prev) => {
-        const next = { ...prev }
-        delete next[def.id]
-        return next
-      })
-      toast.success(`"${def.name}" saved`)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to save"
-      toast.error(msg)
-    } finally {
-      setSavingId(null)
+      try {
+        await upsertUserSetting(userId, def.id, value)
+        // Update local state so displayed value reflects saved state
+        setUserSettings((prev) => {
+          const existing = prev.find((us) => us.settings_id === def.id)
+          if (existing) {
+            return prev.map((us) =>
+              us.settings_id === def.id ? { ...us, value } : us,
+            )
+          }
+          return [
+            ...prev,
+            {
+              user_settings_id: 0,
+              settings_id: def.id,
+              type: def.type,
+              group: def.group,
+              name: def.name,
+              description: def.description,
+              available_values: def.available_values,
+              value,
+            },
+          ]
+        })
+        setDirtyValues((prev) => {
+          const next = { ...prev }
+          delete next[def.id]
+          return next
+        })
+        toast.success(`"${def.name}" saved`)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Failed to save"
+        toast.error(msg)
+      }
+    },
+    [userId],
+  )
+
+  const handleChange = useCallback(
+    (def: SettingsDefinition, newValue: unknown) => {
+      // Update dirty values immediately so UI reflects the new value
+      setDirtyValues((prev) => ({
+        ...prev,
+        [def.id]: newValue,
+      }))
+
+      // Clear existing timer for this setting
+      if (saveTimersRef.current[def.id]) {
+        clearTimeout(saveTimersRef.current[def.id]!)
+      }
+
+      // Set new 1-second timer
+      saveTimersRef.current[def.id] = setTimeout(() => {
+        doSave(def, newValue)
+      }, 1000)
+    },
+    [doSave],
+  )
+
+  // Cleanup all timers on unmount
+  useEffect(() => {
+    const timers = saveTimersRef.current
+    return () => {
+      for (const id of Object.keys(timers)) {
+        const t = timers[Number(id)]
+        if (t) clearTimeout(t)
+      }
     }
-  }
+  }, [])
 
   // --- Build sidebar nav items from group keys ---
   const groupKeys = useMemo(() => Object.keys(grouped), [grouped])
@@ -611,50 +646,35 @@ function SettingsPageContent() {
           </p>
         </div>
         <Separator className="my-4 flex-none" />
-        <div className="faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12">
-          <div className="-mx-1 px-1.5 lg:max-w-xl">
+        <div className="faded-bottom h-full w-full overflow-y-auto scroll-smooth pt-1 pe-4 pb-12">
+          <div className="-mx-1 space-y-4 px-1.5 lg:max-w-xl">
             {settings.map((def) => {
               const FieldComponent =
                 fieldRegistry[def.type] || UnknownField
-              const isDirty = def.id in dirtyValues
-              const isSaving = savingId === def.id
               const currentValue = getValue(def)
 
               return (
-                <div key={def.id} className="space-y-2">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-1">
-                      <Label className="text-sm font-medium">
-                        {def.name}
-                      </Label>
-                      {def.description && (
-                        <p className="text-xs text-muted-foreground">
-                          {def.description}
-                        </p>
-                      )}
-                    </div>
-                    {isDirty && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleSave(def)}
-                        disabled={isSaving}
-                      >
-                        {isSaving ? "Saving..." : "Save"}
-                      </Button>
+                <Card key={def.id}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium">
+                      {def.name}
+                    </CardTitle>
+                    {def.description && (
+                      <CardDescription className="text-xs">
+                        {def.description}
+                      </CardDescription>
                     )}
-                  </div>
-
-                  <FieldComponent
-                    definition={def}
-                    value={currentValue}
-                    onChange={(newValue) =>
-                      setDirtyValues((prev) => ({
-                        ...prev,
-                        [def.id]: newValue,
-                      }))
-                    }
-                  />
-                </div>
+                  </CardHeader>
+                  <CardContent>
+                    <FieldComponent
+                      definition={def}
+                      value={currentValue}
+                      onChange={(newValue) =>
+                        handleChange(def, newValue)
+                      }
+                    />
+                  </CardContent>
+                </Card>
               )
             })}
           </div>
