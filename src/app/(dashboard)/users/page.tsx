@@ -3,21 +3,21 @@
 import { useEffect, useState, useMemo, useCallback, useRef, Suspense } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import {
-  Search,
+  MagnifyingGlass,
   Plus,
-  MoreHorizontal,
-  Trash2,
+  DotsThree,
+  Trash,
   Shield,
   Pencil,
-  KeyRound,
+  Key,
   Clock,
   CheckCircle,
-  RotateCcw,
+  ArrowCounterClockwise,
   ShieldCheck,
-  BarChart3,
+  ChartBar,
   Database,
-  ChevronsUpDown,
-} from "lucide-react"
+  CaretUpDown,
+} from "@phosphor-icons/react"
 import {
   useReactTable,
   getCoreRowModel,
@@ -92,7 +92,7 @@ const roleConfig: Record<
     colorClass: "text-neutral-950 dark:text-neutral-50",
   },
   "Data Analytics": {
-    icon: BarChart3,
+    icon: ChartBar,
     className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
     colorClass: "text-blue-700 dark:text-blue-300",
   },
@@ -592,7 +592,7 @@ function UsersPageContent() {
       {/* Search + Status filter + Email filter */}
       <div className="flex items-center gap-2">
         <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <MagnifyingGlass className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Filter users..."
             value={search}
@@ -648,7 +648,7 @@ function UsersPageContent() {
                     })}
                   </div>
                 )}
-                <ChevronsUpDown className="size-3.5 text-muted-foreground" />
+                <CaretUpDown className="size-3.5 text-muted-foreground" />
               </Button>
             )}
           />
@@ -759,7 +759,7 @@ function UsersPageContent() {
                                 />
                               )}
                             >
-                              <MoreHorizontal className="size-4" />
+                              <DotsThree className="size-4" />
                               <span className="sr-only">Actions</span>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
@@ -789,7 +789,7 @@ function UsersPageContent() {
                                 <DropdownMenuItem
                                   onClick={() => setPasswordDialog(user)}
                                 >
-                                  <KeyRound className="mr-2 size-4" />
+                                  <Key className="mr-2 size-4" />
                                   Change Password
                                 </DropdownMenuItem>
                                 {user.deleted_at ? (
@@ -798,7 +798,7 @@ function UsersPageContent() {
                                     <DropdownMenuItem
                                       onClick={() => handleRestore(user)}
                                     >
-                                      <RotateCcw className="mr-2 size-4" />
+                                      <ArrowCounterClockwise className="mr-2 size-4" />
                                       Restore
                                     </DropdownMenuItem>
                                   </>
@@ -809,7 +809,7 @@ function UsersPageContent() {
                                       className="text-destructive focus:text-destructive"
                                       onClick={() => setDeleteDialog(user)}
                                     >
-                                      <Trash2 className="mr-2 size-4" />
+                                      <Trash className="mr-2 size-4" />
                                       Delete
                                     </DropdownMenuItem>
                                   </>

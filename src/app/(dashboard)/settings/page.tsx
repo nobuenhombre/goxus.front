@@ -46,7 +46,7 @@ import {
   ComboboxList,
   ComboboxItem,
 } from "@/components/ui/combobox"
-import { CheckIcon, Palette, Bell, UserCog, Monitor, Settings2 } from "lucide-react"
+import { Check, Palette, Bell, UserGear, Monitor, GearSix } from "@phosphor-icons/react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
@@ -384,7 +384,7 @@ function SelectWithSearchField({ definition, value, onChange }: FieldProps) {
                   currentKey === key ? "opacity-100" : "opacity-0",
                 )}
               >
-                <CheckIcon className="size-4" />
+                <Check className="size-4" />
               </span>
               {options[key]}
             </ComboboxItem>
@@ -460,12 +460,12 @@ function SettingsPageContent() {
   // Map group names to icons
   const groupIcon = useCallback((name: string) => {
     const lower = name.toLowerCase()
-    if (lower.includes("profile") || lower.includes("user")) return <UserCog size={18} />
+    if (lower.includes("profile") || lower.includes("user")) return <UserGear size={18} />
     if (lower.includes("appearance") || lower.includes("theme")) return <Palette size={18} />
     if (lower.includes("notif")) return <Bell size={18} />
     if (lower.includes("display") || lower.includes("monitor")) return <Monitor size={18} />
-    if (lower.includes("account")) return <UserCog size={18} />
-    return <Settings2 size={18} />
+    if (lower.includes("account")) return <UserGear size={18} />
+    return <GearSix size={18} />
   }, [])
 
   // Build a lookup of user settings by settings_id

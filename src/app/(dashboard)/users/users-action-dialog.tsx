@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2 } from "lucide-react"
+import { Spinner } from "@phosphor-icons/react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -384,7 +384,7 @@ export function UsersActionDialog({
         </div>
         <DialogFooter>
           <Button type="submit" form="user-action-form" disabled={submitting}>
-            {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+            {submitting && <Spinner className="mr-2 size-4 animate-spin" />}
             Save changes
           </Button>
         </DialogFooter>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2, LogIn } from "lucide-react"
+import { Spinner, SignIn } from "@phosphor-icons/react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -120,9 +120,9 @@ export default function LoginPage() {
               />
               <Button type="submit" disabled={isLoading} className="mt-2">
                 {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <LogIn className="mr-2 h-4 w-4" />
+                  <SignIn className="mr-2 h-4 w-4" />
                 )}
                 Sign in
               </Button>

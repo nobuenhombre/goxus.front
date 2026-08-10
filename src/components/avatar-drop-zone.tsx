@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
-import { Upload, X } from "lucide-react"
+import { Upload, X } from "@phosphor-icons/react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 

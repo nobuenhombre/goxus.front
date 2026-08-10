@@ -1,15 +1,15 @@
 /**
  * Role slugs (match values in the database).
  *
- * Suggested Lucide icons:
+ * Suggested Phosphor icons:
  *   Admin         → ShieldCheck
- *   DataAnalytics → BarChart3
+ *   DataAnalytics → ChartBar
  *   DataOperator  → Database
  */
 export const Role = {
   /** ShieldCheck */
   Admin: "admin",
-  /** BarChart3 */
+  /** ChartBar */
   DataAnalytics: "data_analytics",
   /** DataOperator */
   DataOperator: "data_operator",

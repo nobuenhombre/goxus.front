@@ -2,11 +2,11 @@
 
 import type React from "react"
 import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react"
+  CaretLeft,
+  CaretRight,
+  CaretCircleDoubleLeft,
+  CaretCircleDoubleRight,
+} from "@phosphor-icons/react"
 import { cn, getPageNumbers } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -92,7 +92,7 @@ export function DataTablePagination({
             disabled={!canPrev}
           >
             <span className="sr-only">Go to first page</span>
-            <ChevronsLeft className="size-4" />
+            <CaretCircleDoubleLeft className="size-4" />
           </Button>
 
           {/* Previous page */}
@@ -103,7 +103,7 @@ export function DataTablePagination({
             disabled={!canPrev}
           >
             <span className="sr-only">Go to previous page</span>
-            <ChevronLeft className="size-4" />
+            <CaretLeft className="size-4" />
           </Button>
 
           {/* Page number buttons */}
@@ -132,7 +132,7 @@ export function DataTablePagination({
             disabled={!canNext}
           >
             <span className="sr-only">Go to next page</span>
-            <ChevronRight className="size-4" />
+            <CaretRight className="size-4" />
           </Button>
 
           {/* Last page */}
@@ -143,7 +143,7 @@ export function DataTablePagination({
             disabled={!canNext}
           >
             <span className="sr-only">Go to last page</span>
-            <ChevronsRight className="size-4" />
+            <CaretCircleDoubleRight className="size-4" />
           </Button>
         </div>
       </div>

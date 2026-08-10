@@ -3,14 +3,14 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
-  LayoutDashboard,
+  Layout,
   Users,
   Shield,
-  Settings,
-  LogOut,
-  ChevronsUpDown,
+  Gear,
+  SignOut,
+  CaretUpDown,
   Command,
-} from "lucide-react"
+} from "@phosphor-icons/react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -41,7 +41,7 @@ import { useLocalStorageString } from "@/hooks/use-local-storage"
 import { useEffect, useMemo, useState } from "react"
 
 const otherItems = [
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Settings", href: "/settings", icon: Gear },
 ]
 
 export function AppSidebar() {
@@ -64,7 +64,7 @@ export function AppSidebar() {
 
   const navItems = useMemo(
     () => [
-      { label: "Dashboard", href: "/", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/", icon: Layout },
       { label: "Users", href: savedUsersQuery ? `/users?${savedUsersQuery}` : "/users", icon: Users },
     ],
     [savedUsersQuery],
@@ -89,7 +89,7 @@ export function AppSidebar() {
                   <span className="truncate font-semibold">Goxus</span>
                   <span className="truncate text-xs">Admin Panel</span>
                 </div>
-                <ChevronsUpDown className="ms-auto" />
+                <CaretUpDown className="ms-auto" />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 className="w-(--radix-dropdown-menu-trigger-width)"
@@ -166,7 +166,7 @@ export function AppSidebar() {
                   <span className="truncate font-semibold">{userName}</span>
                   <span className="truncate text-xs">{userEmail}</span>
                 </div>
-                <ChevronsUpDown className="ms-auto size-4" />
+                <CaretUpDown className="ms-auto size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 side="top"
@@ -177,7 +177,7 @@ export function AppSidebar() {
                   <DropdownMenuLabel>{userName}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 size-4" />
+                    <SignOut className="mr-2 size-4" />
                     Sign out
                   </DropdownMenuItem>
                 </DropdownMenuGroup>

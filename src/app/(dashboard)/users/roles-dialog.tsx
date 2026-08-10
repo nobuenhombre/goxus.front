@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Loader2, ShieldCheck, BarChart3, Database, Shield } from "lucide-react"
+import { Spinner, ShieldCheck, ChartBar, Database, Shield } from "@phosphor-icons/react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
@@ -37,7 +37,7 @@ const roleIconMap: Record<
     colorClass: "text-neutral-950 dark:text-neutral-50",
   },
   data_analytics: {
-    icon: BarChart3,
+    icon: ChartBar,
     colorClass: "text-blue-600 dark:text-blue-400",
   },
   data_operator: {
@@ -180,7 +180,7 @@ export function RolesDialog({
         <div className="max-h-[60vh] overflow-y-auto py-2">
           {loading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+              <Spinner className="size-6 animate-spin text-muted-foreground" />
             </div>
           ) : allRoles.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">
@@ -213,7 +213,7 @@ export function RolesDialog({
             onClick={handleSave}
             disabled={loading || saving || dirty.size === 0}
           >
-            {saving && <Loader2 className="mr-2 size-4 animate-spin" />}
+            {saving && <Spinner className="mr-2 size-4 animate-spin" />}
             Save changes
           </Button>
         </DialogFooter>

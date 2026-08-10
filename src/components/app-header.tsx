@@ -6,10 +6,10 @@ import { useTheme } from "next-themes"
 import {
   Moon,
   Sun,
-  Search,
-  Settings,
-  LogOut,
-} from "lucide-react"
+  MagnifyingGlass,
+  Gear,
+  SignOut,
+} from "@phosphor-icons/react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
@@ -86,7 +86,7 @@ export function AppHeader() {
           variant="outline"
           className="group relative h-8 w-full flex-1 justify-start rounded-md bg-muted/25 text-sm font-normal text-muted-foreground shadow-none hover:bg-accent sm:w-40 sm:pe-12 md:flex-none lg:w-52 xl:w-64"
         >
-          <Search className="absolute inset-s-1.5 top-1/2 size-4 -translate-y-1/2" />
+          <MagnifyingGlass className="absolute inset-s-1.5 top-1/2 size-4 -translate-y-1/2" />
           <span className="ms-4">Search</span>
           <kbd className="pointer-events-none absolute inset-e-[0.3rem] top-[0.3rem] hidden h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 select-none group-hover:bg-accent sm:flex">
             <span className="text-xs">⌘</span>K
@@ -109,7 +109,7 @@ export function AppHeader() {
           size="icon"
           className="size-9 rounded-full"
         >
-          <Settings className="size-4" />
+          <Gear className="size-4" />
           <span className="sr-only">Settings</span>
         </Button>
 
@@ -127,7 +127,7 @@ export function AppHeader() {
               <DropdownMenuLabel>{userName}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 size-4" />
+                <SignOut className="mr-2 size-4" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuGroup>

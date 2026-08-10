@@ -1,4 +1,4 @@
-import { Activity, Users, Shield, CalendarDays } from "lucide-react"
+import { ChartLine, Users, Shield, Calendar } from "@phosphor-icons/react"
 
 import {
   Card,
@@ -18,7 +18,7 @@ const stats = [
   {
     title: "Active Sessions",
     value: "24",
-    icon: Activity,
+    icon: ChartLine,
     change: "+3 today",
     iconClass: "text-muted-foreground",
   },
@@ -32,7 +32,7 @@ const stats = [
   {
     title: "Uptime",
     value: "99.9%",
-    icon: CalendarDays,
+    icon: Calendar,
     change: "Past 30 days",
     iconClass: "text-muted-foreground",
   },
