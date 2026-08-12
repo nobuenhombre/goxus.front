@@ -1,0 +1,11 @@
+#!/bin/bash
+# goxus frontend local start script
+set -e
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+nvm use lts/*
+
+cd /opt/goxus/front
+
+exec node_modules/.bin/next start -H 127.0.0.1 -p 4698

@@ -1,0 +1,21 @@
+[Unit]
+Description=goxus frontend (Next.js)
+After=network.target api_goxus.service
+Wants=api_goxus.service
+
+[Service]
+Type=simple
+User=bookworker06JAN1979
+WorkingDirectory=/opt/goxus/front
+Environment=NODE_ENV=production
+Environment=NEXT_PUBLIC_API_URL=http://api.goxus.ivan
+ExecStart=/usr/local/bin/goxus-front-start
+Restart=on-failure
+RestartSec=5
+
+# Log output to file
+StandardOutput=append:/var/log/goxus-front/app.log
+StandardError=append:/var/log/goxus-front/error.log
+
+[Install]
+WantedBy=multi-user.target

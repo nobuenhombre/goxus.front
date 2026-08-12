@@ -1,3 +1,5 @@
+"use client"
+
 import { ChartLine, Users, Shield, Calendar } from "@phosphor-icons/react"
 
 import {
