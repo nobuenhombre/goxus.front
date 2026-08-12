@@ -35,7 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-  SelectItem,
+  SelectItem, SelectGroup,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
@@ -147,11 +147,13 @@ function SelectSimpleField({ definition, value, onChange }: FieldProps) {
         <SelectValue placeholder="Select..." />
       </SelectTrigger>
       <SelectContent>
+        <SelectGroup>
         {Object.entries(options).map(([key, label]) => (
           <SelectItem key={key} value={key}>
             {label}
           </SelectItem>
         ))}
+        </SelectGroup>
       </SelectContent>
     </Select>
   )

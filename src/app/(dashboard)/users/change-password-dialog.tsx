@@ -163,7 +163,7 @@ export function ChangePasswordDialog({
             form="change-password-form"
             disabled={submitting}
           >
-            {submitting && <Spinner className="mr-2 size-4 animate-spin" />}
+            {submitting && <Spinner className="mr-2 size-4 animate-spin" weight="regular" />}
             Save changes
           </Button>
         </DialogFooter>

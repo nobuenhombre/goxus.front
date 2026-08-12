@@ -7,6 +7,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectGroup,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -43,6 +44,7 @@ export function SettingsSidebarNav({
             <SelectValue placeholder="Select group" />
           </SelectTrigger>
           <SelectContent>
+            <SelectGroup>
             {items.map((item) => (
               <SelectItem key={item.id} value={item.id}>
                 <div className="flex gap-x-4 px-2 py-1">
@@ -51,6 +53,7 @@ export function SettingsSidebarNav({
                 </div>
               </SelectItem>
             ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
       </div>

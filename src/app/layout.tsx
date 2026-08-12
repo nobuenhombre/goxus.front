@@ -1,17 +1,14 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import localFont from "next/font/local"
 import "./globals.css"
+import { IconProvider } from "@/providers/icon-provider"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 
-const geistSans = Geist({
-  variable: "--font-sans",
-  subsets: ["latin"],
-})
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const jetbrainsMono = localFont({
+  src: "../fonts/JetBrainsMono.ttf",
+  variable: "--font-jetbrains",
+  display: "swap",
 })
 
 export const metadata: Metadata = {
@@ -27,19 +24,21 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={jetbrainsMono.variable}
       suppressHydrationWarning
     >
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          storageKey="goxus_theme"
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
+        <IconProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem={false}
+            storageKey="goxus_theme"
+          >
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </IconProvider>
       </body>
     </html>
   )

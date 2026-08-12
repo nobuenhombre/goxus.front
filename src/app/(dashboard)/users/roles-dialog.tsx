@@ -180,7 +180,7 @@ export function RolesDialog({
         <div className="max-h-[60vh] overflow-y-auto py-2">
           {loading ? (
             <div className="flex justify-center py-8">
-              <Spinner className="size-6 animate-spin text-muted-foreground" />
+              <Spinner className="size-6 animate-spin text-muted-foreground" weight="regular" />
             </div>
           ) : allRoles.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">
@@ -213,7 +213,7 @@ export function RolesDialog({
             onClick={handleSave}
             disabled={loading || saving || dirty.size === 0}
           >
-            {saving && <Spinner className="mr-2 size-4 animate-spin" />}
+            {saving && <Spinner className="mr-2 size-4 animate-spin" weight="regular" />}
             Save changes
           </Button>
         </DialogFooter>

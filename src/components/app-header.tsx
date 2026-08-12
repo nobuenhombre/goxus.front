@@ -68,7 +68,7 @@ export function AppHeader() {
       <div className="relative flex h-full items-center gap-3 p-4 sm:gap-4">
         <SidebarTrigger />
 
-        <Separator orientation="vertical" className="h-6" />
+        <Separator orientation="vertical" className="h-6 data-vertical:self-center" />
 
         <nav className="hidden items-center space-x-4 lg:flex lg:space-x-4 xl:space-x-6 me-auto">
           {navLinks.map((link) => (

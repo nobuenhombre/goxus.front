@@ -119,7 +119,7 @@ export function AvatarDropZone({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         className={cn(
-          "relative flex size-28 cursor-pointer items-center justify-center rounded-full border-2 border-dashed transition-colors",
+          "relative flex size-40 cursor-pointer items-center justify-center rounded-full border-2 border-dashed transition-colors",
           isDragOver
             ? "border-primary bg-primary/10"
             : error
@@ -137,14 +137,14 @@ export function AvatarDropZone({
         />
 
         {previewUrl ? (
-          <Avatar className="size-28">
+          <Avatar className="size-40">
             <AvatarImage src={previewUrl} alt="Avatar preview" />
-            <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
+            <AvatarFallback className="text-5xl">{initials}</AvatarFallback>
           </Avatar>
         ) : currentAvatarUrl ? (
-          <Avatar className="size-28">
+          <Avatar className="size-40">
             <AvatarImage src={currentAvatarUrl} alt="User avatar" />
-            <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
+            <AvatarFallback className="text-5xl">{initials}</AvatarFallback>
           </Avatar>
         ) : (
           <div className="flex flex-col items-center gap-1 text-muted-foreground">

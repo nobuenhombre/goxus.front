@@ -115,9 +115,9 @@ const columns: ColumnDef<User>[] = [
       const user = row.original
       const avatarSrc = getAvatarUrl(user.id)
       return (
-        <Avatar className="size-8">
+        <Avatar className="size-12">
           <AvatarImage src={avatarSrc} alt={user.name} />
-          <AvatarFallback className="text-xs">
+          <AvatarFallback className="text-sm">
             {user.name.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
@@ -582,7 +582,6 @@ function UsersPageContent() {
             setActionOpen(true)
           }}
           size="lg"
-          className="shadow-xs"
         >
           <Plus className="mr-2 size-4" />
           Add User
@@ -708,7 +707,7 @@ function UsersPageContent() {
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="group/row">
+              <TableRow key={headerGroup.id} className="even:bg-background odd:bg-muted/30 group/row">
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
@@ -746,7 +745,7 @@ function UsersPageContent() {
                       return (
                         <TableCell
                           key={cell.id}
-                          className="bg-background group-hover/row:bg-muted"
+                          className=""
                         >
                           <DropdownMenu>
                             <DropdownMenuTrigger
@@ -826,7 +825,7 @@ function UsersPageContent() {
                       <TableCell
                         key={cell.id}
                         className={cn(
-                          "bg-background group-hover/row:bg-muted",
+                          "",
                           // Only font-medium on the name column
                           cell.column.id === "name" && "font-medium",
                         )}

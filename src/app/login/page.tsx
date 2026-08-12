@@ -120,7 +120,7 @@ export default function LoginPage() {
               />
               <Button type="submit" disabled={isLoading} className="mt-2">
                 {isLoading ? (
-                  <Spinner className="mr-2 h-4 w-4 animate-spin" />
+                  <Spinner className="mr-2 h-4 w-4 animate-spin" weight="regular" />
                 ) : (
                   <SignIn className="mr-2 h-4 w-4" />
                 )}

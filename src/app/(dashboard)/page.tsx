@@ -1,6 +1,6 @@
 "use client"
 
-import { ChartLine, Users, Shield, Calendar } from "@phosphor-icons/react"
+import { Bell, Users, Shield, CalendarBlank } from "@phosphor-icons/react"
 
 import {
   Card,
@@ -20,7 +20,7 @@ const stats = [
   {
     title: "Active Sessions",
     value: "24",
-    icon: ChartLine,
+    icon: Bell,
     change: "+3 today",
     iconClass: "text-muted-foreground",
   },
@@ -34,7 +34,7 @@ const stats = [
   {
     title: "Uptime",
     value: "99.9%",
-    icon: Calendar,
+    icon: CalendarBlank,
     change: "Past 30 days",
     iconClass: "text-muted-foreground",
   },

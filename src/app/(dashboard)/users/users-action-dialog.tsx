@@ -384,7 +384,7 @@ export function UsersActionDialog({
         </div>
         <DialogFooter>
           <Button type="submit" form="user-action-form" disabled={submitting}>
-            {submitting && <Spinner className="mr-2 size-4 animate-spin" />}
+            {submitting && <Spinner className="mr-2 size-4 animate-spin" weight="regular" />}
             Save changes
           </Button>
         </DialogFooter>
