@@ -5,7 +5,7 @@ Wants=api_goxus.service
 
 [Service]
 Type=simple
-User=bookworker06JAN1979
+User=www-data
 WorkingDirectory=/opt/goxus/front
 Environment=NODE_ENV=production
 Environment=NEXT_PUBLIC_API_URL=http://api.goxus.ivan

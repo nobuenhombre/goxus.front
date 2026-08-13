@@ -2,7 +2,7 @@
 
 **Date:** 2025-06-03  
 **Auditor:** Hermes Agent (moonshotai/kimi-k2.6)  
-**Scope:** `/home/bookworker06JAN1979/Sources/golang.app/goxus/front/`  
+**Scope:** `front/`  
 **Stack:** Next.js 16.2.6, React 19.2.4, Tailwind CSS v4, shadcn/ui v4 (Base UI), react-hook-form + zod  
 
 ---
